@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: elite_postgres
+    environment:
+      POSTGRES_USER: elite
+      POSTGRES_PASSWORD: elite
+      POSTGRES_DB: elite
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U elite"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: elite_app
+    environment:
+      DATABASE_URL: postgres://elite:elite@postgres:5432/elite?sslmode=disable
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      JWT_SECRET: ${JWT_SECRET:-default-secret-key-change-in-production}
+      PORT: 8080
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: sh -c "/app/migrate -command=up && /app/server"
+
+volumes:
+  postgres_data:
+
