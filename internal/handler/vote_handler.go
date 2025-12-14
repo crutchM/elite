@@ -34,11 +34,6 @@ func (h *VoteHandler) Vote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.NominantID == 0 {
-		http.Error(w, "nominant_id is required", http.StatusBadRequest)
-		return
-	}
-
 	if req.CategoryID == 0 {
 		http.Error(w, "category_id is required", http.StatusBadRequest)
 		return
