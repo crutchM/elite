@@ -28,6 +28,7 @@ type AuthResponse struct {
 
 type VoteRequest struct {
 	NominantID int64 `json:"nominant_id"`
+	CategoryID int64 `json:"category_id"`
 }
 
 type VoteResponse struct {
@@ -90,12 +91,21 @@ func main() {
 	// Шаг 2: Тест голосования
 	fmt.Println("2️⃣ Тестирование голосования...")
 	fmt.Print("Введите ID номинанта (или Enter для пропуска): ")
-	
+
 	var nominantID int64
 	fmt.Scanf("%d\n", &nominantID)
-	
+
 	if nominantID > 0 {
-		err = testVote(serverURL, token, nominantID)
+		fmt.Print("Введите ID категории (номинации): ")
+		var categoryID int64
+		fmt.Scanf("%d\n", &categoryID)
+
+		if categoryID == 0 {
+			fmt.Println("❌ ID категории обязателен")
+			os.Exit(1)
+		}
+
+		err = testVote(serverURL, token, nominantID, categoryID)
 		if err != nil {
 			fmt.Printf("❌ Ошибка голосования: %v\n", err)
 			os.Exit(1)
@@ -139,8 +149,11 @@ func authenticate(serverURL string, reqBody AuthRequest) (string, error) {
 	return authResp.Token, nil
 }
 
-func testVote(serverURL, token string, nominantID int64) error {
-	reqBody := VoteRequest{NominantID: nominantID}
+func testVote(serverURL, token string, nominantID, categoryID int64) error {
+	reqBody := VoteRequest{
+		NominantID: nominantID,
+		CategoryID: categoryID,
+	}
 	jsonData, err := json.Marshal(reqBody)
 	if err != nil {
 		return fmt.Errorf("failed to marshal request: %w", err)
@@ -174,4 +187,3 @@ func testVote(serverURL, token string, nominantID int64) error {
 
 	return nil
 }
-

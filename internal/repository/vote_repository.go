@@ -38,21 +38,7 @@ func (r *VoteRepository) CreateVote(ctx context.Context, vote *models.Vote) erro
 	return nil
 }
 
-func (r *VoteRepository) GetNominantCategory(ctx context.Context, nominantID int64) (int64, error) {
-	var categoryID int64
-	query := `SELECT category_id FROM nominants WHERE id = $1`
-
-	err := r.pool.QueryRow(ctx, query, nominantID).Scan(&categoryID)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return 0, errors.New("nominant not found")
-		}
-		return 0, err
-	}
-
-	return categoryID, nil
-}
-
+// CheckNominantExists проверяет существование номинанта
 func (r *VoteRepository) CheckNominantExists(ctx context.Context, nominantID int64) (bool, error) {
 	var exists bool
 	query := `SELECT EXISTS(SELECT 1 FROM nominants WHERE id = $1)`
@@ -61,3 +47,25 @@ func (r *VoteRepository) CheckNominantExists(ctx context.Context, nominantID int
 	return exists, err
 }
 
+// CheckNominantInCategory проверяет, участвует ли номинант в указанной категории
+func (r *VoteRepository) CheckNominantInCategory(ctx context.Context, nominantID, categoryID int64) (bool, error) {
+	var exists bool
+	query := `
+		SELECT EXISTS(
+			SELECT 1 FROM nominant_categories 
+			WHERE nominant_id = $1 AND category_id = $2
+		)
+	`
+
+	err := r.pool.QueryRow(ctx, query, nominantID, categoryID).Scan(&exists)
+	return exists, err
+}
+
+// CheckCategoryExists проверяет существование категории
+func (r *VoteRepository) CheckCategoryExists(ctx context.Context, categoryID int64) (bool, error) {
+	var exists bool
+	query := `SELECT EXISTS(SELECT 1 FROM categories WHERE id = $1)`
+
+	err := r.pool.QueryRow(ctx, query, categoryID).Scan(&exists)
+	return exists, err
+}

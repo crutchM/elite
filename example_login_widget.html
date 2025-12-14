@@ -205,6 +205,9 @@
             const nominantId = prompt('Введите ID номинанта для голосования:');
             if (!nominantId) return;
 
+            const categoryId = prompt('Введите ID категории (номинации):');
+            if (!categoryId) return;
+
             try {
                 const response = await fetch(`${apiUrl}/api/vote`, {
                     method: 'POST',
@@ -213,7 +216,8 @@
                         'Authorization': `Bearer ${authToken}`
                     },
                     body: JSON.stringify({
-                        nominant_id: parseInt(nominantId)
+                        nominant_id: parseInt(nominantId),
+                        category_id: parseInt(categoryId)
                     })
                 });
 
@@ -222,7 +226,8 @@
                 if (response.ok) {
                     showResult(`✅ Голос успешно засчитан!`, 'success');
                 } else {
-                    showResult(`❌ Ошибка: ${data.error || response.statusText}`, 'error');
+                    const errorText = data.error || data.message || response.statusText;
+                    showResult(`❌ Ошибка: ${errorText}`, 'error');
                 }
             } catch (error) {
                 showResult(`❌ Ошибка: ${error.message}`, 'error');

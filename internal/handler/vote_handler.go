@@ -39,20 +39,29 @@ func (h *VoteHandler) Vote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if req.CategoryID == 0 {
+		http.Error(w, "category_id is required", http.StatusBadRequest)
+		return
+	}
+
 	if err := h.voteService.CreateVote(r.Context(), tgUserID, &req); err != nil {
-		if err.Error() == "vote already exists for this category" {
-			http.Error(w, err.Error(), http.StatusConflict)
+		errMsg := err.Error()
+		if errMsg == "vote already exists for this category" {
+			http.Error(w, errMsg, http.StatusConflict)
 			return
 		}
-		if err.Error() == "nominant not found" {
-			http.Error(w, err.Error(), http.StatusNotFound)
+		if errMsg == "nominant not found" || errMsg == "category not found" {
+			http.Error(w, errMsg, http.StatusNotFound)
 			return
 		}
-		http.Error(w, "Failed to create vote: "+err.Error(), http.StatusInternalServerError)
+		if errMsg == "nominant is not participating in this category" {
+			http.Error(w, errMsg, http.StatusBadRequest)
+			return
+		}
+		http.Error(w, "Failed to create vote: "+errMsg, http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]string{"message": "Vote created successfully"})
 }
-

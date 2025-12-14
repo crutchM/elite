@@ -6,9 +6,13 @@ type Category struct {
 }
 
 type Nominant struct {
-	ID         int64  `json:"id"`
-	Name       string `json:"name"`
-	CategoryID int64  `json:"category_id"`
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
+}
+
+type NominantCategory struct {
+	NominantID int64 `json:"nominant_id"`
+	CategoryID int64 `json:"category_id"`
 }
 
 type User struct {
@@ -23,5 +27,5 @@ type Vote struct {
 
 type VoteRequest struct {
 	NominantID int64 `json:"nominant_id"`
+	CategoryID int64 `json:"category_id"`
 }
-
