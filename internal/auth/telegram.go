@@ -45,18 +45,17 @@ type LoginWidgetData struct {
 	Hash      string `json:"hash"`
 }
 
-// ValidateLoginWidgetData проверяет данные от Telegram Login Widget
 func (ta *TelegramAuth) ValidateLoginWidgetData(data *LoginWidgetData) (*TelegramUser, error) {
 	if data.ID == 0 {
 		return nil, errors.New("user ID is required")
 	}
 
-	// Проверяем, что данные не старше 24 часов
+	// Проверяем свежесть данных
 	if time.Now().Unix()-data.AuthDate > 86400 {
 		return nil, errors.New("auth data is too old")
 	}
 
-	// Создаем data-check-string из всех полей кроме hash
+	// Собираем все поля кроме hash
 	fields := make(map[string]string)
 	fields["id"] = strconv.FormatInt(data.ID, 10)
 	fields["first_name"] = data.FirstName
@@ -71,6 +70,7 @@ func (ta *TelegramAuth) ValidateLoginWidgetData(data *LoginWidgetData) (*Telegra
 	}
 	fields["auth_date"] = strconv.FormatInt(data.AuthDate, 10)
 
+	// Сортируем ключи и формируем data_check_string
 	var keys []string
 	for k := range fields {
 		keys = append(keys, k)
@@ -83,16 +83,16 @@ func (ta *TelegramAuth) ValidateLoginWidgetData(data *LoginWidgetData) (*Telegra
 	}
 	dataCheckStr := strings.Join(dataCheckParts, "\n")
 
-	secretKey := hmac.New(sha256.New, []byte("WebAppData"))
-	secretKey.Write([]byte(ta.botToken))
-	secretKeyHash := secretKey.Sum(nil)
+	// Telegram требует: secret_key = SHA256(bot_token)
+	secretKey := sha256.Sum256([]byte(ta.botToken))
 
-	calculatedHash := hmac.New(sha256.New, secretKeyHash)
-	calculatedHash.Write([]byte(dataCheckStr))
-	calculatedHashHex := hex.EncodeToString(calculatedHash.Sum(nil))
+	// HMAC-SHA256
+	mac := hmac.New(sha256.New, secretKey[:])
+	mac.Write([]byte(dataCheckStr))
+	calculatedHash := hex.EncodeToString(mac.Sum(nil))
 
-	if calculatedHashHex != data.Hash {
-		return nil, errors.New("invalid hash")
+	if calculatedHash != data.Hash {
+		return nil, fmt.Errorf("invalid hash: got %s, expected %s", data.Hash, calculatedHash)
 	}
 
 	return &TelegramUser{
