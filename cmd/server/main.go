@@ -24,6 +24,8 @@ func main() {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
+	log.Println(cfg)
+
 	ctx := context.Background()
 
 	pool, err := database.NewPool(ctx, cfg.DatabaseURL)
